@@ -1,75 +1,51 @@
-import re
+import os
 import openpyxl
+from openpyxl import load_workbook
 
-# Função para extrair os dados do texto usando expressões regulares
-def extrair_dados(texto):
-    padrao_nome = r"Nome Completo:\s*(.+)"
-    padrao_gestor = r"Gestor:\s*(.+)"
-    padrao_telefone = r"Celular:\s*(\d+-\d+)"
-    padrao_data_desligamento = r"Data do desligamento:\s*(\d+/\d+/\d+)"
-    padrao_area = r"Diretoria \/ Area:\s*(.+)"
+def criar_ou_abrir_planilha(nome_arquivo):
+    if os.path.exists(nome_arquivo):
+        wb = load_workbook(nome_arquivo)
+        planilha = wb.active
+    else:
+        wb = openpyxl.Workbook()
+        planilha = wb.active
+        planilha.title = "Dados de Desligamento"
+        cabecalho = ["Nome", "Gestor", "Telefone", "Data do Desligamento", "Área"]
+        planilha.append(cabecalho)
+    return wb, planilha
 
-    nome = re.search(padrao_nome, texto).group(1)
-    gestor = re.search(padrao_gestor, texto).group(1)
-    telefone = re.search(padrao_telefone, texto).group(1)
-    data_desligamento = re.search(padrao_data_desligamento, texto).group(1)
-    area = re.search(padrao_area, texto).group(1)
+def adicionar_dados(planilha, nome, gestor, telefone, data_desligamento, area):
+    planilha.append([nome, gestor, telefone, data_desligamento, area])
 
-    return nome, gestor, telefone, data_desligamento, area
+def salvar_planilha(wb, nome_arquivo):
+    wb.save(nome_arquivo)
+    print(f"Os dados foram salvos no arquivo '{nome_arquivo}'.")
 
-# Função para criar ou abrir uma planilha Excel e inserir os dados
-def inserir_dados_excel(dados):
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
+def main():
+    # Especificar um diretório diferente para salvar o arquivo
+    diretorio_salvar = "C:\\Users\\Usuario\\Documents"
+    nome_arquivo = os.path.join(diretorio_salvar, "dados_desligamento.xlsx")
 
-    # Adicionando cabeçalhos
-    sheet.append(["Nome", "Gestor", "Telefone", "Data do Desligamento", "Área"])
+    wb, planilha = criar_ou_abrir_planilha(nome_arquivo)
 
-    # Inserindo os dados
-    sheet.append(dados)
+    while True:
+        # Solicitar dados do usuário
+        nome = input("Digite o nome: ")
+        gestor = input("Digite o gestor: ")
+        telefone = input("Digite o telefone: ")
+        data_desligamento = input("Digite a data do desligamento: ")  # Aceita qualquer valor
+        area = input("Digite a área: ")
 
-    # Salvando a planilha
-    workbook.save("dados_desligamento.xlsx")
-    print("Dados inseridos com sucesso no arquivo 'dados_desligamento.xlsx'.")
+        # Adicionar dados à planilha
+        adicionar_dados(planilha, nome, gestor, telefone, data_desligamento, area)
 
-# Texto fornecido
-texto_comunicado = """
-Olá,
+        # Perguntar ao usuário se deseja adicionar mais informações
+        resposta = input("Deseja adicionar mais informações? (S/N): ").upper()
+        if resposta != 'S':
+            break
 
-Comunicamos o desligamento de ISIS CRISTINA DA SILVA ALVES, conforme dados detalhados abaixo. Por favor, prossigam com o fluxo interno para:
+    # Salvar a planilha
+    salvar_planilha(wb, nome_arquivo)
 
-• Bloqueio dos acessos;
-• Agendamento de exame demissional;
-• Confirmação Auxílio Educação/Idiomas para desconto em folha;
-• Confirmação de mobiliários para serem devolvidos;
-• Agendamento com a transportadora para retirada de equipamentos para os casos de trabalho remoto ( e enquanto durar a pandemia todos estão home office) ou agendamento para devolução dos equipamentos para os que residem em São Paulo.
-
-
-Nome Completo: ISIS CRISTINA DA SILVA ALVES
-
-
-
-Empresa: LOCAWEB SERVICOS DE INTERNET S/A
-
-Diretoria / Area: ALL IN CUSTOMER SUCCESS
-
-
-Gestor: FLAVIO DOS SANTOS DE NIJS
-
-Data do desligamento: 20/02/2024
-
-CPF: 43459800895-
-
-
-Endereço: Rua Francisco Pessoa , 690
-
-Celular: 1198947-7479
-
-Equipamentos: Deverão ser retirados na residência
-"""
-
-# Extraindo os dados do texto
-dados = extrair_dados(texto_comunicado)
-
-# Inserindo os dados na planilha Excel
-inserir_dados_excel(dados)
+if __name__ == "__main__":
+    main()
